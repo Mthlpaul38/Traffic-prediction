@@ -1,6 +1,6 @@
 import csv
 with open('datasets2.csv', 'w') as csvfile:
-    fieldnames = ['Route','Time_interval', 'Vazhakulam','avoly','Nirmala','adooparambu','Reach_time']
+    fieldnames = ['Time_interval', 'Vazhakulam','avoly','Nirmala','adooparambu','Reach_time']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     places={"Vazhakulam","avoly","Nirmala","adooparambu"}
