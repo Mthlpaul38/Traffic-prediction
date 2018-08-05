@@ -1,11 +1,91 @@
 import pandas as pd
 from threading import Thread,Lock
+import datetime
+import random
+from collections import defaultdict
+from heapq import *
 #import tbb
 import time
 from geopy.distance import great_circle
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 lock=Lock()
+def dijkstra(f, t):
+    edges = [
+        ("Vazhakulam", "Avoly", 4),
+        ("Avoly", "Vazhakulam", 4),
+        ("Vazhakulam", "Nadukara", 6),
+        ("Vazhakulam", "Ayavana", 11),
+        ("Nadukara", "Arakuzha", 5),
+        ("Nadukara", "Vazhakulam", 6),
+        ("Arakuzha", "Perumballoor", 4),
+        ("Arakuzha", "Nadukara", 5),
+        ("Ayavana", "Anchapetty Jn", 5),
+        ("Ayavana", "Varappetty", 12),
+        ("Ayavana", "Vazhakulam", 11),
+        ("Perumballoor", "Arakuzha", 4),
+        ("Anchapetty Jn", "Puthuppadi", 7),
+        ("Anchapetty Jn", "Ayavana", 5),
+        ("Anchapetty Jn", "Anicadu", 13),
+        ("Puthuppadi", "Anchapetty Jn", 7),
+        ("Puthuppadi", "Karukadam", 4),
+        ("Puthuppadi", "Chalikkadavu", 6),
+        ("Varappetty", "Karukadam", 5),
+        ("Varappetty", "Mathirappilly", 4),
+        ("Varappetty", "Kothamangalam", 8),
+        ("Varappetty", "Ayavana", 12),
+        ("Karukadam", "Mathirappilly", 3),
+        ("Karukadam", "Varappetty", 5),
+        ("Karukadam", "Puthuppadi", 4),
+        ("Mathirappilly", "Kothamangalam", 7),
+        ("Mathirappilly", "Karukadam", 3),
+        ("Mathirappilly", "Varapetty", 4),
+        ("Anicadu", "Anchapetty Jn", 13),
+        ("Anicadu", "Chalikkadavu", 7),
+        ("Kothamangalam", "Mathirappilly", 7),
+        ("Kothamangalam", "Varappetty", 8),
+        ("Chalikkadavu", "Kanam", 2),
+        ("Chalikkadavu", "Puthuppadi", 6),
+        ("Chalikkadavu", "Anicadu", 7),
+        ("Kizhakkekara", "Kanam", 4),
+        ("Kanam", "Chalikkadavu", 2),
+        ("Kanam", "Kizhakkekara", 4)
+    ]
+    g = defaultdict(list)
+    for l,r,c in edges:
+        g[l].append((c,r))
+
+    q, seen, mins = [(0,f,())], set(), {f: 0}
+    while q:
+        (cost,v1,path) = heappop(q)
+        if v1 not in seen:
+            seen.add(v1)
+            path = (v1, path)
+            if v1 == t: return (cost, path)
+
+            for c, v2 in g.get(v1, ()):
+                if v2 in seen: continue
+                prev = mins.get(v2, None)
+                next = cost + c
+                if prev is None or next < prev:
+                    mins[v2] = next
+                    heappush(q, (next, v2, path))
+
+    return float("inf")
+
+def addtime(min,ctime):
+    t=round(min,2)
+    t=t*3600
+    s=str(datetime.timedelta(seconds=t))
+    timeList=[]
+    timeList.append(s)
+    timeList.append(ctime)
+    sum = datetime.timedelta()
+    for i in timeList:
+        (h, m, s) = i.split(':')
+        d = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
+        sum += d
+    return(str(sum))
 def zone(hr,min,sec):
     if(min==0 and hr==7):
         z=1
@@ -93,7 +173,7 @@ def datasets2(tym,loc):
     g = lati_longi('Muvattupuza')
     dist = great_circle(tuple(l),tuple(g)).kilometers
     return dist/model.predict([d])
-def datasets3(tym,v1,v2,loc):
+def datasets3(tym,loc):
     path="datasets3.csv"
     data = pd.read_csv(path)
     model = RandomForestRegressor()
@@ -114,45 +194,63 @@ def datasets3(tym,v1,v2,loc):
     for j in v:
         d.append(j)
     l = lati_longi(loc)
-    l = lati_longi(loc)
     g = lati_longi('Muvattupuza')
     dist = great_circle(tuple(l),tuple(g)).kilometers
     return dist / model.predict([d])
+def wttime(tym,count):
+    path="count.csv"
+    data=pd.read_csv(path)
+    model = RandomForestRegressor()
+    predictors=(['Time_interval','Count'])
+    y = data.Average_wt_time
+    X = data[predictors]
+    model.fit(X, y)
+    d=[[tym,count]]
+    return model.predict(d)
+
+
+
+
 places1=["Kothamangalam","Mathirappilly","Karukadam","Puthuppady"]
 places2=['Vazhakulam','Avoly','Anicadu','Kizhakkekara']
 places3=["Arakuzha","Perumballoor"]
 current_loc=input("enter the current location")
 dest=input("enter the destination")
+t = time.strftime("%H:%M:%S")  # get system time
+hr = t[0] + t[1]
+hr = int(hr)
+mini = t[3] + t[4]
+mini = int(mini)
+sec = t[6] + t[7]
+sec = int(sec)
+q = int(zone(hr, mini, sec))
 if current_loc in places1:
-    n=places1.index(current_loc)
-    places1=places1[n:]
-    t = time.strftime("%H:%M:%S")  # get system time
-    hr = t[0] + t[1]
-    hr = int(hr)
-    min = t[3] + t[4]
-    min = int(min)
-    sec = t[6] + t[7]
-    sec = int(sec)
-    q = int(zone(hr, min, sec))
     tym=datasets1(q,current_loc)
 elif current_loc in places2:
-    t = time.strftime("%H:%M:%S")  # get system time
-    hr = t[0] + t[1]
-    hr = int(hr)
-    min = t[3] + t[4]
-    min = int(min)
-    sec = t[6] + t[7]
-    sec = int(sec)
-    q = int(zone(hr, min, sec))
     tym=datasets2(q,current_loc)
+elif current_loc in places3:
+    tym=datasets3(q,current_loc)
 else:
-    t = time.strftime("%H:%M:%S")  # get system time
-    hr = t[0] + t[1]
-    hr = int(hr)
-    min = t[3] + t[4]
-    min = int(min)
-    sec = t[6] + t[7]
-    sec = int(sec)
-    q = int(zone(hr, min, sec))
-    tym=datasets3(q,23,56,current_loc)
-print(tym[0])
+    print("ERROR:only places listed in decription is allowed")
+arrival_time=addtime(tym[0],time.strftime("%H:%M:%S"))
+print(q)
+if q==1:
+    count=random.randint(1,30)
+elif q==2:
+    count = random.randint(90, 200)
+elif q==3:
+    count = random.randint(20, 120)
+elif q==4:
+    count = random.randint(100, 250)
+elif q==5:
+    count=random.randint(20,100)
+wait_time=wttime(q,count)
+print("Assuming the number of vehicles count to be:",count)
+print("The time you can cross the traffic is:",addtime(wait_time[0]/3600 , time.strftime("%H:%M:%S")))
+if wait_time >=100:
+    print("The most optimal path id",dijkstra(current_loc, dest)[1])
+
+
+
+
+
