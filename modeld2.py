@@ -75,10 +75,10 @@ def dijkstra(t,f):
     return float("inf")
 
 def addtime(min,ctime):
-    t=round(min,2)
-    t=t*3600
-    s=str(datetime.timedelta(seconds=t))
-    timeList=[]
+    t = round(min, 2)
+    t = t * 3600
+    s = str(datetime.timedelta(seconds=t))
+    timeList = []
     timeList.append(s)
     timeList.append(ctime)
     sum = datetime.timedelta()
@@ -86,7 +86,7 @@ def addtime(min,ctime):
         (h, m, s) = i.split(':')
         d = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
         sum += d
-    return(str(sum))
+    return (str(sum))
 
 def zone(hr,min,sec):
     if(min==0 and hr==7):
@@ -129,9 +129,9 @@ def lati_longi(loc):
     lock.release()
     return lat_long[loc]
 
-def datasets1(tym,loc):
-    path="datasets1.csv"
-    places1 = ['Kothamangalam','Mathirappilly','Karukadam','Puthuppady']
+def datasets1(tym,loc,places,dataset):
+    path=dataset
+    places1 = places
     n = places1.index(loc)
     places1 = places1[n:]
     v=[]
@@ -154,54 +154,6 @@ def datasets1(tym,loc):
     dist =great_circle(l,g).kilometers
     return (dist / model.predict([d]))
 
-def datasets2(tym,loc):
-    path="datasets2.csv"
-    places2 = ['Vazhakulam', 'Avoly', 'Anicadu', 'Kizhakkekara']
-    data=pd.read_csv(path)
-    n = places2.index(loc)
-    places2 = places2[n:]
-    v = []
-    for i in places2:
-        print("Enter the speed at place ",i)
-        x=int(input())
-        v.append(x)
-    model = RandomForestRegressor()
-    l = ['Time_interval'] + places2
-    predictors = np.array(l)
-    y=data.Average_speed
-    X = data[predictors]
-    model.fit(X, y)
-    d = [tym]
-    for j in v:
-        d.append(j)
-    l = lati_longi(loc)
-    g = lati_longi('Muvattupuza')
-    dist = great_circle(tuple(l),tuple(g)).kilometers
-    return dist/model.predict([d])
-def datasets3(tym,loc):
-    path="datasets3.csv"
-    data = pd.read_csv(path)
-    model = RandomForestRegressor()
-    places3 = ["Arakuzha", "Perumballoor"]
-    n = places3.index(loc)
-    places3 = places3[n:]
-    v = []
-    for i in places3:
-        print("Enter the speed at place ", i)
-        x = int(input())
-        v.append(x)
-    l = ['Time_interval'] + places3
-    predictors = np.array(l)
-    y = data.Average_speed
-    X = data[predictors]
-    model.fit(X, y)
-    d = [tym]
-    for j in v:
-        d.append(j)
-    l = lati_longi(loc)
-    g = lati_longi('Muvattupuza')
-    dist = great_circle(tuple(l),tuple(g)).kilometers
-    return dist / model.predict([d])
 def wttime(tym,count):
     path="count.csv"
     data=pd.read_csv(path)
@@ -212,9 +164,6 @@ def wttime(tym,count):
     model.fit(X, y)
     d=[[tym,count]]
     return model.predict(d)
-
-
-
 def model():
     places1=["Kothamangalam","Mathirappilly","Karukadam","Puthuppady"]
     places2=['Vazhakulam','Avoly','Anicadu','Kizhakkekara']
@@ -234,11 +183,14 @@ def model():
     sec = int(sec)
     q = int(zone(hr, mini, sec))
     if current_loc in places1 and dest not in places1:
-        tym=datasets1(q,current_loc)
+        dataset="datasets1.csv"
+        tym=datasets1(q,current_loc,places1,dataset)
     elif current_loc in places2 and dest not in places2:
-        tym=datasets2(q,current_loc)
+        dataset="datasets2.csv"
+        tym=datasets1(q,current_loc,places2,dataset)
     elif current_loc in places3 and dest not in places1:
-        tym=datasets3(q,current_loc)
+        dataset="datasets3.csv"
+        tym=datasets1(q,current_loc,places3,dataset)
     elif current_loc not in places:
         print("ERROR: Only places listed above is allowed")
         exit()
@@ -255,7 +207,6 @@ def model():
         print("The most optimal path is ", route)
         exit()
     arrival_time=addtime(tym[0],time.strftime("%H:%M:%S"))
-    print(q)
     if q==1:
         count=random.randint(1,30)
     elif q==2:
