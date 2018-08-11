@@ -4,13 +4,14 @@ import datetime
 import random
 from collections import defaultdict
 from heapq import *
+#from kivy.app import App
 #import tbb
 import time
 from geopy.distance import great_circle
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
 lock=Lock()
-def dijkstra(f, t):
+def dijkstra(t,f):
     edges = [
         ("Vazhakulam", "Avoly", 4),
         ("Avoly", "Vazhakulam", 4),
@@ -86,6 +87,7 @@ def addtime(min,ctime):
         d = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
         sum += d
     return(str(sum))
+
 def zone(hr,min,sec):
     if(min==0 and hr==7):
         z=1
@@ -109,6 +111,7 @@ def zone(hr,min,sec):
         else:
             z=1
     return z
+
 def lati_longi(loc):
     lock.acquire()
     lat_long = {'Kothamangalam': [10.060190, 76.635083],
@@ -125,14 +128,15 @@ def lati_longi(loc):
                 }
     lock.release()
     return lat_long[loc]
+
 def datasets1(tym,loc):
     path="datasets1.csv"
     places1 = ['Kothamangalam','Mathirappilly','Karukadam','Puthuppady']
-    n = places1.index(current_loc)
+    n = places1.index(loc)
     places1 = places1[n:]
     v=[]
     for i in places1:
-        print("speed at place", i)
+        print("Enter the speed at place ", i)
         x = int(input())
         v.append(x)
     data = pd.read_csv(path)
@@ -149,15 +153,16 @@ def datasets1(tym,loc):
     g = lati_longi('Muvattupuza')
     dist =great_circle(l,g).kilometers
     return (dist / model.predict([d]))
+
 def datasets2(tym,loc):
     path="datasets2.csv"
     places2 = ['Vazhakulam', 'Avoly', 'Anicadu', 'Kizhakkekara']
     data=pd.read_csv(path)
-    n = places2.index(current_loc)
+    n = places2.index(loc)
     places2 = places2[n:]
     v = []
     for i in places2:
-        print("speed at place",i)
+        print("Enter the speed at place ",i)
         x=int(input())
         v.append(x)
     model = RandomForestRegressor()
@@ -178,11 +183,11 @@ def datasets3(tym,loc):
     data = pd.read_csv(path)
     model = RandomForestRegressor()
     places3 = ["Arakuzha", "Perumballoor"]
-    n = places3.index(current_loc)
+    n = places3.index(loc)
     places3 = places3[n:]
     v = []
     for i in places3:
-        print("speed at place", i)
+        print("Enter the speed at place ", i)
         x = int(input())
         v.append(x)
     l = ['Time_interval'] + places3
@@ -210,47 +215,68 @@ def wttime(tym,count):
 
 
 
-
-places1=["Kothamangalam","Mathirappilly","Karukadam","Puthuppady"]
-places2=['Vazhakulam','Avoly','Anicadu','Kizhakkekara']
-places3=["Arakuzha","Perumballoor"]
-current_loc=input("enter the current location")
-dest=input("enter the destination")
-t = time.strftime("%H:%M:%S")  # get system time
-hr = t[0] + t[1]
-hr = int(hr)
-mini = t[3] + t[4]
-mini = int(mini)
-sec = t[6] + t[7]
-sec = int(sec)
-q = int(zone(hr, mini, sec))
-if current_loc in places1:
-    tym=datasets1(q,current_loc)
-elif current_loc in places2:
-    tym=datasets2(q,current_loc)
-elif current_loc in places3:
-    tym=datasets3(q,current_loc)
-else:
-    print("ERROR:only places listed in decription is allowed")
-arrival_time=addtime(tym[0],time.strftime("%H:%M:%S"))
-print(q)
-if q==1:
-    count=random.randint(1,30)
-elif q==2:
-    count = random.randint(90, 200)
-elif q==3:
-    count = random.randint(20, 120)
-elif q==4:
-    count = random.randint(100, 250)
-elif q==5:
-    count=random.randint(20,100)
-wait_time=wttime(q,count)
-print("Assuming the number of vehicles count to be:",count)
-print("The time you can cross the traffic is:",addtime(wait_time[0]/3600 , time.strftime("%H:%M:%S")))
-if wait_time >=100:
-    print("The most optimal path id",dijkstra(current_loc, dest)[1])
-
-
-
-
-
+def model():
+    places1=["Kothamangalam","Mathirappilly","Karukadam","Puthuppady"]
+    places2=['Vazhakulam','Avoly','Anicadu','Kizhakkekara']
+    places3=["Arakuzha","Perumballoor"]
+    places=places2+places1+places3
+    print(places1)
+    print(places2)
+    print(places3)
+    current_loc=input("Enter the current location(any one from above list): ")
+    dest=input("Enter the destination: ")
+    t = time.strftime("%H:%M:%S")  # get system time
+    hr = t[0] + t[1]
+    hr = int(hr)
+    mini = t[3] + t[4]
+    mini = int(mini)
+    sec = t[6] + t[7]
+    sec = int(sec)
+    q = int(zone(hr, mini, sec))
+    if current_loc in places1 and dest not in places1:
+        tym=datasets1(q,current_loc)
+    elif current_loc in places2 and dest not in places2:
+        tym=datasets2(q,current_loc)
+    elif current_loc in places3 and dest not in places1:
+        tym=datasets3(q,current_loc)
+    elif current_loc not in places:
+        print("ERROR: Only places listed above is allowed")
+        exit()
+    else:
+        print("No traffic block found in the route")
+        ss = dijkstra(current_loc, dest)[1]
+        ss = str(ss)
+        m = ['(', ')', ',', "'"]
+        k = ""
+        for i in ss:
+            if i not in m: k += i
+        k = k.split(" ")
+        route = "->".join(k)
+        print("The most optimal path is ", route)
+        exit()
+    arrival_time=addtime(tym[0],time.strftime("%H:%M:%S"))
+    print(q)
+    if q==1:
+        count=random.randint(1,30)
+    elif q==2:
+        count = random.randint(90, 200)
+    elif q==3:
+        count = random.randint(20, 120)
+    elif q==4:
+        count = random.randint(100, 250)
+    elif q==5:
+        count=random.randint(20,100)
+    wait_time=wttime(q,count)
+    print("Assuming the number of vehicles count to be: ",count)
+    print("The time you can cross the traffic is: ",addtime(wait_time[0]/3600 ,arrival_time))
+    if wait_time >=100:
+        ss=dijkstra(current_loc, dest)[1]
+        ss=str(ss)
+        m=['(',')',',',"'"]
+        k=""
+        for i in ss:
+            if i not in m:k+=i
+        k=k.split(" ")
+        route="->".join(k)
+        print("The most optimal path is ",route)
+model()
