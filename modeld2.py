@@ -21,32 +21,32 @@ def dijkstra(t,f):
         ("Nadukara", "Vazhakulam", 6),
         ("Arakuzha", "Perumballoor", 4),
         ("Arakuzha", "Nadukara", 5),
-        ("Ayavana", "Anchapetty Jn", 5),
+        ("Ayavana", "AnchapettyJn", 5),
         ("Ayavana", "Varappetty", 12),
         ("Ayavana", "Vazhakulam", 11),
         ("Perumballoor", "Arakuzha", 4),
-        ("Anchapetty Jn", "Puthuppadi", 7),
-        ("Anchapetty Jn", "Ayavana", 5),
-        ("Anchapetty Jn", "Anicadu", 13),
-        ("Puthuppadi", "Anchapetty Jn", 7),
-        ("Puthuppadi", "Karukadam", 4),
-        ("Puthuppadi", "Chalikkadavu", 6),
+        ("Anchapetty", "Puthuppady", 7),
+        ("Anchapetty", "Ayavana", 5),
+        ("Anchapetty", "Anicadu", 13),
+        ("Puthuppady", "Anchapetty", 7),
+        ("Puthuppady", "Karukadam", 4),
+        ("Puthuppady", "Chalikkadavu", 6),
         ("Varappetty", "Karukadam", 5),
         ("Varappetty", "Mathirappilly", 4),
         ("Varappetty", "Kothamangalam", 8),
         ("Varappetty", "Ayavana", 12),
         ("Karukadam", "Mathirappilly", 3),
         ("Karukadam", "Varappetty", 5),
-        ("Karukadam", "Puthuppadi", 4),
+        ("Karukadam", "Puthuppady", 4),
         ("Mathirappilly", "Kothamangalam", 7),
         ("Mathirappilly", "Karukadam", 3),
         ("Mathirappilly", "Varapetty", 4),
-        ("Anicadu", "Anchapetty Jn", 13),
+        ("Anicadu", "Anchapetty", 13),
         ("Anicadu", "Chalikkadavu", 7),
         ("Kothamangalam", "Mathirappilly", 7),
         ("Kothamangalam", "Varappetty", 8),
         ("Chalikkadavu", "Kanam", 2),
-        ("Chalikkadavu", "Puthuppadi", 6),
+        ("Chalikkadavu", "Puthuppady", 6),
         ("Chalikkadavu", "Anicadu", 7),
         ("Kizhakkekara", "Kanam", 4),
         ("Kanam", "Chalikkadavu", 2),
@@ -137,7 +137,6 @@ def lati_longi(loc):
 def datasets1(current_loc,places,v,dataset,dest):
     path=dataset
     places1 = places
-    print(places)
     data = pd.read_csv(path)
     model = RandomForestRegressor()
     l = ['Time_interval']+places1
@@ -207,6 +206,7 @@ def model():
             print("Enter the speed at place ", places1[i])
             x = int(input())
             v.append(x)
+            current_loc=places1[i]
             datasets1(current_loc, places1[n:i+1],v,dataset,dest)
     elif current_loc in places2 and dest not in places2:
         n = places2.index(current_loc)
@@ -215,6 +215,7 @@ def model():
             print("Enter the speed at place:", places2[i])
             x = int(input())
             v.append(x)
+            current_loc = places2[i]
             datasets1(current_loc, places2[n:i+1],v,dataset,dest)
     elif current_loc in places3 and dest not in places1:
         dataset="datasets3.csv"
@@ -223,20 +224,13 @@ def model():
             print("Enter the speed at place ", places3[i])
             x = int(input())
             v.append(x)
+            current_loc = places3[i]
             datasets1(current_loc, places3[n:i+1],v,dataset,dest)
     elif current_loc not in places:
         print("ERROR: Only places listed above is allowed")
         exit()
     else:
         print("No traffic block found in the route")
-        ss = dijkstra(current_loc, dest)[1]
-        ss = str(ss)
-        m = ['(', ')', ',', "'"]
-        k = ""
-        for i in ss:
-            if i not in m: k += i
-        k = k.split(" ")
-        route = "->".join(k)
-        print("The most optimal path is ", route)
+        print(current_loc,"->",dest)
         exit()
 model()
