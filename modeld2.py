@@ -88,25 +88,30 @@ def addtime(min,ctime):
         sum += d
     return (str(sum))
 
-def zone(hr,min,sec):
-    if(min==0 and hr==7):
+def zone():
+    t = time.strftime("%H:%M:%S")  # get system time
+    hr = t[0] + t[1]
+    hr = int(hr)
+    mini = t[3] + t[4]
+    mini = int(mini)
+    if(mini==0 and hr==7):
         z=1
-    elif(min==0 and hr==10):
+    elif(mini==0 and hr==10):
         z=2
-    elif(min==0 and hr==16):
+    elif(mini==0 and hr==16):
         z=3
-    elif(min==0 and hr==19):
+    elif(mini==0 and hr==19):
         z=4
-    elif(min==0 and hr==22):
+    elif(mini==0 and hr==22):
         z=5
     else:
-        if( hr>=7 and hr<10 and min>0):
+        if( hr>=7 and hr<10 and mini>0):
             z=2
-        elif( hr>=10 and hr<16 and min>0):
+        elif( hr>=10 and hr<16 and mini>0):
             z=3
-        elif( hr>=16 and hr<19 and min>0):
+        elif( hr>=16 and hr<19 and mini>0):
             z=4
-        elif( hr>=19 and hr<22 and min>0):
+        elif( hr>=19 and hr<22 and mini>0):
             z=5
         else:
             z=1
@@ -120,7 +125,7 @@ def lati_longi(loc):
                 'Puthuppady': [10.011139, 76.603722],
                 'Vazhakulam': [9.946958, 76.635900],
                 'Avoly': [9.958699, 76.625166],
-                'Anicdu': [9.968679, 76.607780],
+                'Anicadu': [9.968679, 76.607780],
                 'Kizhakkekara': [9.977876, 76.592166],
                 'Muvattupuza': [9.989423, 76.578975],
                 'Arakuzha': [9.927757, 76.602278],
@@ -129,16 +134,10 @@ def lati_longi(loc):
     lock.release()
     return lat_long[loc]
 
-def datasets1(tym,loc,places,dataset):
+def datasets1(current_loc,places,v,dataset,dest):
     path=dataset
     places1 = places
-    n = places1.index(loc)
-    places1 = places1[n:]
-    v=[]
-    for i in places1:
-        print("Enter the speed at place ", i)
-        x = int(input())
-        v.append(x)
+    print(places)
     data = pd.read_csv(path)
     model = RandomForestRegressor()
     l = ['Time_interval']+places1
@@ -146,14 +145,15 @@ def datasets1(tym,loc,places,dataset):
     y = data.Average_speed
     X = data[predictors]
     model.fit(X, y)
-    d=[tym]
+    q = zone()
+    d=[q]
     for j in v:
         d.append(j)
-    l = lati_longi(loc)
+    l = lati_longi(current_loc)
     g = lati_longi('Muvattupuza')
     dist =great_circle(l,g).kilometers
-    return (dist / model.predict([d]))
-
+    tym=(dist / model.predict([d]))
+    calc_time(tym[0], q, current_loc, dest)
 def wttime(tym,count):
     path="count.csv"
     data=pd.read_csv(path)
@@ -164,49 +164,8 @@ def wttime(tym,count):
     model.fit(X, y)
     d=[[tym,count]]
     return model.predict(d)
-def model():
-    places1=["Kothamangalam","Mathirappilly","Karukadam","Puthuppady"]
-    places2=['Vazhakulam','Avoly','Anicadu','Kizhakkekara']
-    places3=["Arakuzha","Perumballoor"]
-    places=places2+places1+places3
-    print(places1)
-    print(places2)
-    print(places3)
-    current_loc=input("Enter the current location(any one from above list): ")
-    dest=input("Enter the destination: ")
-    t = time.strftime("%H:%M:%S")  # get system time
-    hr = t[0] + t[1]
-    hr = int(hr)
-    mini = t[3] + t[4]
-    mini = int(mini)
-    sec = t[6] + t[7]
-    sec = int(sec)
-    q = int(zone(hr, mini, sec))
-    if current_loc in places1 and dest not in places1:
-        dataset="datasets1.csv"
-        tym=datasets1(q,current_loc,places1,dataset)
-    elif current_loc in places2 and dest not in places2:
-        dataset="datasets2.csv"
-        tym=datasets1(q,current_loc,places2,dataset)
-    elif current_loc in places3 and dest not in places1:
-        dataset="datasets3.csv"
-        tym=datasets1(q,current_loc,places3,dataset)
-    elif current_loc not in places:
-        print("ERROR: Only places listed above is allowed")
-        exit()
-    else:
-        print("No traffic block found in the route")
-        ss = dijkstra(current_loc, dest)[1]
-        ss = str(ss)
-        m = ['(', ')', ',', "'"]
-        k = ""
-        for i in ss:
-            if i not in m: k += i
-        k = k.split(" ")
-        route = "->".join(k)
-        print("The most optimal path is ", route)
-        exit()
-    arrival_time=addtime(tym[0],time.strftime("%H:%M:%S"))
+def calc_time(tym,q,current_loc,dest):
+    arrival_time=addtime(tym,time.strftime("%H:%M:%S"))
     if q==1:
         count=random.randint(1,30)
     elif q==2:
@@ -230,4 +189,54 @@ def model():
         k=k.split(" ")
         route="->".join(k)
         print("The most optimal path is ",route)
+def model():
+    places1=["Kothamangalam","Mathirappilly","Karukadam","Puthuppady"]
+    places2=['Vazhakulam','Avoly','Anicadu','Kizhakkekara']
+    places3=["Arakuzha","Perumballoor"]
+    places=places2+places1+places3
+    print(places1)
+    print(places2)
+    print(places3)
+    current_loc=input("Enter the current location(any one from above list): ")
+    dest=input("Enter the destination: ")
+    v=[]
+    if current_loc in places1 and dest not in places1:
+        dataset="datasets1.csv"
+        n=places1.index(current_loc)
+        for i in range(n,len(places1)):
+            print("Enter the speed at place ", places1[i])
+            x = int(input())
+            v.append(x)
+            datasets1(current_loc, places1[n:i+1],v,dataset,dest)
+    elif current_loc in places2 and dest not in places2:
+        n = places2.index(current_loc)
+        dataset="datasets2.csv"
+        for i in range(n,len(places2)):
+            print("Enter the speed at place:", places2[i])
+            x = int(input())
+            v.append(x)
+            datasets1(current_loc, places2[n:i+1],v,dataset,dest)
+    elif current_loc in places3 and dest not in places1:
+        dataset="datasets3.csv"
+        n = places3.index(current_loc)
+        for i in range(n,len(places3)):
+            print("Enter the speed at place ", places3[i])
+            x = int(input())
+            v.append(x)
+            datasets1(current_loc, places3[n:i+1],v,dataset,dest)
+    elif current_loc not in places:
+        print("ERROR: Only places listed above is allowed")
+        exit()
+    else:
+        print("No traffic block found in the route")
+        ss = dijkstra(current_loc, dest)[1]
+        ss = str(ss)
+        m = ['(', ')', ',', "'"]
+        k = ""
+        for i in ss:
+            if i not in m: k += i
+        k = k.split(" ")
+        route = "->".join(k)
+        print("The most optimal path is ", route)
+        exit()
 model()
